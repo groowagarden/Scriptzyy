@@ -1,13 +1,11 @@
--- Roblox Dupe Pet UI with fully clickable, highlighted pet list, and improved design
+-- Roblox Dupe Pet UI with horizontal pet choices above "START DUPE"
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
--- Neon/Glass color constants
 local CYAN = Color3.fromRGB(0,255,220)
 local DARK = Color3.fromRGB(13,45,85)
-local GLASS = Color3.fromRGB(40, 255, 200)
 local BG = Color3.fromRGB(12,18,30)
 local BTN_GRAD_TOP = Color3.fromRGB(0,255,150)
 local BTN_GRAD_BOTTOM = Color3.fromRGB(0,100,60)
@@ -31,7 +29,6 @@ local function glassify(guiObj, transparency)
     glass.Parent = guiObj
 end
 
--- Neon pulse for buttons
 local function neonPulse(button)
     local origColor = button.BackgroundColor3
     local neonColor = CYAN
@@ -44,7 +41,6 @@ local function neonPulse(button)
     end)
 end
 
--- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "DupePetUI"
 screenGui.ResetOnSpawn = false
@@ -127,61 +123,65 @@ title.TextScaled = true
 title.ZIndex = 11
 title.Parent = mainFrame
 
--- Pet list left panel
-local petListFrame = Instance.new("Frame")
-petListFrame.Size = UDim2.new(0.34, 0, 0.85, 0)
-petListFrame.Position = UDim2.new(0.02, 0, 0.13, 0)
-petListFrame.BackgroundTransparency = 0.42
-petListFrame.BackgroundColor3 = Color3.fromRGB(14, 24, 32)
-petListFrame.BorderSizePixel = 0
-petListFrame.ZIndex = 11
-petListFrame.Parent = mainFrame
-addGradient(petListFrame, ColorSequence.new{
+-- Central UI panel
+local dupeFrame = Instance.new("Frame")
+dupeFrame.Size = UDim2.new(0.8, 0, 0.74, 0)
+dupeFrame.Position = UDim2.new(0.1, 0, 0.19, 0)
+dupeFrame.BackgroundTransparency = 0.13
+dupeFrame.BackgroundColor3 = Color3.fromRGB(10, 40, 70)
+dupeFrame.BorderSizePixel = 0
+dupeFrame.ZIndex = 12
+dupeFrame.Parent = mainFrame
+addGradient(dupeFrame, ColorSequence.new{
     ColorSequenceKeypoint.new(0, CYAN),
     ColorSequenceKeypoint.new(1, DARK)
-}, 270)
-glassify(petListFrame, 0.96)
+}, 0)
+glassify(dupeFrame, 0.93)
 
-local petListTitle = Instance.new("TextLabel")
-petListTitle.Text = "PET LIST:"
-petListTitle.Size = UDim2.new(1, 0, 0.08, 0)
-petListTitle.BackgroundTransparency = 1
-petListTitle.TextColor3 = Color3.fromRGB(200,255,255)
-petListTitle.Font = Enum.Font.GothamBold
-petListTitle.TextScaled = true
-petListTitle.TextWrapped = true
-petListTitle.ZIndex = 12
-petListTitle.Parent = petListFrame
+-- PET CHOICE ROW (Horizontal)
+local choiceLabel = Instance.new("TextLabel")
+choiceLabel.Text = "CHOOSE PET TO DUPE:"
+choiceLabel.Size = UDim2.new(1, 0, 0.14, 0)
+choiceLabel.Position = UDim2.new(0, 0, 0, 0)
+choiceLabel.BackgroundTransparency = 1
+choiceLabel.TextColor3 = CYAN
+choiceLabel.Font = Enum.Font.GothamBold
+choiceLabel.TextScaled = true
+choiceLabel.ZIndex = 13
+choiceLabel.Parent = dupeFrame
 
 local pets = {"RACCOON", "DRAGONFLY", "DISCO BEE", "QUEEN BEE", "MIMIC", "RED FOX", "BUTTERFLY"}
 local selectedPet = pets[1]
 local lastSelectedBtn = nil
 local petBtnRefs = {}
 
-local petListLayout = Instance.new("UIListLayout")
-petListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-petListLayout.Padding = UDim.new(0, 5)
-petListLayout.Parent = petListFrame
+local petChoiceFrame = Instance.new("Frame")
+petChoiceFrame.Size = UDim2.new(1, 0, 0.17, 0)
+petChoiceFrame.Position = UDim2.new(0, 0, 0.14, 0)
+petChoiceFrame.BackgroundTransparency = 1
+petChoiceFrame.ZIndex = 13
+petChoiceFrame.Parent = dupeFrame
 
-petListTitle.LayoutOrder = 0
+local petChoiceLayout = Instance.new("UIListLayout")
+petChoiceLayout.FillDirection = Enum.FillDirection.Horizontal
+petChoiceLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+petChoiceLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+petChoiceLayout.Padding = UDim.new(0, 8)
+petChoiceLayout.Parent = petChoiceFrame
 
--- PET BUTTON CREATION
 for i, petName in ipairs(pets) do
     local petBtn = Instance.new("TextButton")
     petBtn.Text = petName
-    petBtn.Size = UDim2.new(1, 0, 0.11, 0)
-    petBtn.BackgroundTransparency = 0.23
+    petBtn.Size = UDim2.new(0, math.floor(500/#pets)-8, 0, 32)
+    petBtn.BackgroundTransparency = 0.18
     petBtn.BackgroundColor3 = Color3.fromRGB(24, 50, 80)
     petBtn.TextColor3 = CYAN
     petBtn.Font = Enum.Font.GothamBlack
     petBtn.TextScaled = true
     petBtn.TextWrapped = true
-    petBtn.LayoutOrder = i
     petBtn.ZIndex = 13
-    petBtn.Parent = petListFrame
+    petBtn.Parent = petChoiceFrame
     petBtn.AutoButtonColor = false
-
-    -- Neon border highlight
     local petStroke = Instance.new("UIStroke")
     petStroke.Thickness = 2
     petStroke.Color = CYAN
@@ -191,7 +191,6 @@ for i, petName in ipairs(pets) do
     petBtnRefs[petName] = {btn=petBtn, stroke=petStroke}
     neonPulse(petBtn)
 
-    -- Default: highlight first pet
     if i == 1 then
         petBtn.BackgroundColor3 = CYAN
         petBtn.TextColor3 = BG
@@ -200,7 +199,6 @@ for i, petName in ipairs(pets) do
     end
 
     petBtn.MouseButton1Click:Connect(function()
-        -- Unhighlight old
         if lastSelectedBtn then
             local ref = petBtnRefs[lastSelectedBtn]
             TweenService:Create(ref.btn, TweenInfo.new(0.18), {
@@ -209,7 +207,6 @@ for i, petName in ipairs(pets) do
             }):Play()
             TweenService:Create(ref.stroke, TweenInfo.new(0.18), {Transparency = 1}):Play()
         end
-        -- Highlight new
         TweenService:Create(petBtn, TweenInfo.new(0.18), {
             BackgroundColor3 = CYAN,
             TextColor3 = BG,
@@ -224,26 +221,11 @@ for i, petName in ipairs(pets) do
     end)
 end
 
--- Center UI (dupe/scan) panel
-local dupeFrame = Instance.new("Frame")
-dupeFrame.Size = UDim2.new(0.6, 0, 0.62, 0)
-dupeFrame.Position = UDim2.new(0.38, 0, 0.22, 0)
-dupeFrame.BackgroundTransparency = 0.13
-dupeFrame.BackgroundColor3 = Color3.fromRGB(10, 40, 70)
-dupeFrame.BorderSizePixel = 0
-dupeFrame.ZIndex = 12
-dupeFrame.Parent = mainFrame
-addGradient(dupeFrame, ColorSequence.new{
-    ColorSequenceKeypoint.new(0, CYAN),
-    ColorSequenceKeypoint.new(1, DARK)
-}, 0)
-glassify(dupeFrame, 0.93)
-
 local petDupeLabel = Instance.new("TextLabel")
 petDupeLabel.Text = "PET DUPE: " .. selectedPet
-petDupeLabel.Size = UDim2.new(1, 0, 0.15, 0)
+petDupeLabel.Size = UDim2.new(1, 0, 0.13, 0)
+petDupeLabel.Position = UDim2.new(0, 0, 0.31, 0)
 petDupeLabel.BackgroundTransparency = 1
-petDupeLabel.Position = UDim2.new(0, 0, 0.01, 0)
 petDupeLabel.TextColor3 = CYAN
 petDupeLabel.Font = Enum.Font.GothamBlack
 petDupeLabel.TextScaled = true
@@ -253,8 +235,8 @@ petDupeLabel.Parent = dupeFrame
 -- Neon glassy button style
 local function makeNeonBtn(text, posY)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.95, 0, 0.22, 0)
-    btn.Position = UDim2.new(0.025, 0, posY, 0)
+    btn.Size = UDim2.new(0.85, 0, 0.18, 0)
+    btn.Position = UDim2.new(0.075, 0, posY, 0)
     btn.Text = text
     btn.BackgroundColor3 = Color3.fromRGB(0,255,150)
     btn.BackgroundTransparency = 0.08
@@ -278,11 +260,11 @@ local function makeNeonBtn(text, posY)
     return btn
 end
 
-local startDupeBtn = makeNeonBtn("START DUPE", 0.22)
+local startDupeBtn = makeNeonBtn("START DUPE", 0.45)
 local petInventoryLabel = Instance.new("TextLabel")
 petInventoryLabel.Text = "PET INVENTORY: DETECTED"
-petInventoryLabel.Size = UDim2.new(1, 0, 0.13, 0)
-petInventoryLabel.Position = UDim2.new(0, 0, 0.43, 0)
+petInventoryLabel.Size = UDim2.new(1, 0, 0.11, 0)
+petInventoryLabel.Position = UDim2.new(0, 0, 0.64, 0)
 petInventoryLabel.BackgroundTransparency = 1
 petInventoryLabel.TextColor3 = Color3.fromRGB(0,255,180)
 petInventoryLabel.Font = Enum.Font.GothamBold
@@ -290,7 +272,7 @@ petInventoryLabel.TextScaled = true
 petInventoryLabel.ZIndex = 13
 petInventoryLabel.Parent = dupeFrame
 
-local startScanBtn = makeNeonBtn("START SCAN", 0.59)
+local startScanBtn = makeNeonBtn("START SCAN", 0.77)
 
 -- Real animated loading screen function (using a loop, not TweenService)
 local function showLoading(textPrefix, doneText, after)
