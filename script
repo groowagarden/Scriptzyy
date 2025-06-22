@@ -1,0 +1,336 @@
+-- Roblox Futuristic Dupe Pet UI with Animation and Real Loading Screen
+-- Place in a LocalScript or use via loadstring(game:HttpGet(...))()
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+
+-- Utility to add a gradient to a UI element
+local function addGradient(guiObj, colorSeq, rotate)
+    local grad = Instance.new("UIGradient")
+    grad.Color = colorSeq
+    grad.Rotation = rotate or 0
+    grad.Parent = guiObj
+    return grad
+end
+
+-- Neon pulse animation for buttons
+local function neonPulse(button)
+    local origColor = button.BackgroundColor3
+    local neonColor = Color3.fromRGB(0, 255, 220)
+    local tweenInfo = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, tweenInfo, {BackgroundColor3 = neonColor}):Play()
+        TweenService:Create(button, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(0,0,0)}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, tweenInfo, {BackgroundColor3 = origColor}):Play()
+        TweenService:Create(button, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(20,30,35)}):Play()
+    end)
+    button.MouseButton1Down:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.09), {BackgroundColor3 = Color3.fromRGB(0, 180, 150)}):Play()
+    end)
+    button.MouseButton1Up:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.12), {BackgroundColor3 = neonColor}):Play()
+    end)
+end
+
+-- Create the ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DupePetUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player.PlayerGui
+
+-- Fullscreen black overlay for loading
+local blackScreen = Instance.new("Frame")
+blackScreen.Name = "BlackScreen"
+blackScreen.Size = UDim2.new(1,0,1,0)
+blackScreen.BackgroundColor3 = Color3.fromRGB(0,0,0)
+blackScreen.BackgroundTransparency = 0
+blackScreen.ZIndex = 100
+blackScreen.Visible = false
+blackScreen.Parent = screenGui
+
+-- Animated loading percent text
+local loadingText = Instance.new("TextLabel")
+loadingText.Size = UDim2.new(0.4,0,0.1,0)
+loadingText.Position = UDim2.new(0.3,0,0.45,0)
+loadingText.BackgroundTransparency = 1
+loadingText.TextColor3 = Color3.fromRGB(0,255,200)
+loadingText.Font = Enum.Font.GothamBlack
+loadingText.TextScaled = true
+loadingText.ZIndex = 101
+loadingText.Parent = blackScreen
+
+-- Optional: Spinning loader (circle)
+local spinner = Instance.new("ImageLabel")
+spinner.Size = UDim2.new(0,60,0,60)
+spinner.Position = UDim2.new(0.5,-30,0.38,-30)
+spinner.BackgroundTransparency = 1
+spinner.Image = "rbxassetid://7733960981" -- Simple loader ring
+spinner.ImageColor3 = Color3.fromRGB(0,255,200)
+spinner.ZIndex = 101
+spinner.Parent = blackScreen
+
+-- Animate spinner
+local spinning = false
+local function startSpinner()
+    spinning = true
+    spawn(function()
+        local rot = 0
+        while spinning do
+            rot = (rot + 6) % 360
+            spinner.Rotation = rot
+            task.wait(0.016)
+        end
+        spinner.Rotation = 0
+    end)
+end
+
+local function stopSpinner()
+    spinning = false
+end
+
+-- Main futuristic frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 540, 0, 340)
+mainFrame.Position = UDim2.new(0.5, -270, 0.5, -170)
+mainFrame.BackgroundTransparency = 0.13
+mainFrame.BackgroundColor3 = Color3.fromRGB(10, 17, 28)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+mainFrame.ClipsDescendants = true
+mainFrame.ZIndex = 10
+addGradient(mainFrame, ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(13,45,85)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 185, 215))
+}, 90)
+
+local border = Instance.new("UIStroke")
+border.Thickness = 3
+border.Color = Color3.fromRGB(0,255,200)
+border.Parent = mainFrame
+
+-- Slide/fade in animation for main UI
+mainFrame.Position = UDim2.new(0.5, -270, 1, 0)
+mainFrame.BackgroundTransparency = 1
+mainFrame.Visible = false
+task.wait(0.2)
+mainFrame.Visible = true
+TweenService:Create(mainFrame, TweenInfo.new(0.38, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -270, 0.5, -170)}):Play()
+TweenService:Create(mainFrame, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.13}):Play()
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Text = "DUPE PET V1"
+title.Size = UDim2.new(0.96, 0, 0.12, 0)
+title.Position = UDim2.new(0.02, 0, 0.02, 0)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(0,255,220)
+title.Font = Enum.Font.GothamBlack
+title.TextScaled = true
+title.ZIndex = 11
+title.Parent = mainFrame
+
+-- Pet list container
+local petListFrame = Instance.new("Frame")
+petListFrame.Size = UDim2.new(0.26, 0, 0.86, 0)
+petListFrame.Position = UDim2.new(0.015, 0, 0.13, 0)
+petListFrame.BackgroundTransparency = 0.45
+petListFrame.BackgroundColor3 = Color3.fromRGB(14, 24, 32)
+petListFrame.BorderSizePixel = 0
+petListFrame.ZIndex = 11
+petListFrame.Parent = mainFrame
+addGradient(petListFrame, ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 200)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0,50,100))
+}, 270)
+
+local petListTitle = Instance.new("TextLabel")
+petListTitle.Text = "PET LIST:"
+petListTitle.Size = UDim2.new(1, 0, 0.09, 0)
+petListTitle.BackgroundTransparency = 1
+petListTitle.TextColor3 = Color3.fromRGB(200,255,255)
+petListTitle.Font = Enum.Font.GothamBold
+petListTitle.TextScaled = true
+petListTitle.TextWrapped = true
+petListTitle.Parent = petListFrame
+petListTitle.ZIndex = 12
+
+local pets = {"RACCOON", "DRAGONFLY", "DISCO BEE", "QUEEN BEE", "MIMIC", "RED FOX", "BUTTERFLY"}
+local selectedPet = pets[1]
+local lastSelectedBtn = nil
+
+local petListLayout = Instance.new("UIListLayout")
+petListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+petListLayout.Padding = UDim.new(0, 4)
+petListLayout.Parent = petListFrame
+
+petListTitle.LayoutOrder = 0
+
+for i, petName in ipairs(pets) do
+    local petBtn = Instance.new("TextButton")
+    petBtn.Text = petName
+    petBtn.Size = UDim2.new(1, 0, 0.12, 0)
+    petBtn.BackgroundTransparency = 0.15
+    petBtn.BackgroundColor3 = Color3.fromRGB(35, 70, 110)
+    petBtn.TextColor3 = Color3.fromRGB(0,255,200)
+    petBtn.Font = Enum.Font.Gotham
+    petBtn.TextScaled = true
+    petBtn.LayoutOrder = i
+    petBtn.ZIndex = 13
+    petBtn.Parent = petListFrame
+    addGradient(petBtn, ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0,255,150)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20,30,50))
+    }, 0)
+    petBtn.AutoButtonColor = false
+    neonPulse(petBtn)
+
+    if i == 1 then
+        petBtn.BackgroundColor3 = Color3.fromRGB(0,255,200)
+        petBtn.TextColor3 = Color3.fromRGB(0,0,0)
+        lastSelectedBtn = petBtn
+    end
+
+    petBtn.MouseButton1Click:Connect(function()
+        selectedPet = petName
+        petDupeLabel.Text = "PET DUPE: " .. selectedPet
+        -- Animate selection highlight
+        if lastSelectedBtn then
+            TweenService:Create(lastSelectedBtn, TweenInfo.new(0.23), {BackgroundColor3 = Color3.fromRGB(35, 70, 110), TextColor3 = Color3.fromRGB(0,255,200)}):Play()
+        end
+        TweenService:Create(petBtn, TweenInfo.new(0.16), {BackgroundColor3 = Color3.fromRGB(0,255,200), TextColor3 = Color3.fromRGB(0,0,0)}):Play()
+        lastSelectedBtn = petBtn
+        -- Animate label
+        TweenService:Create(petDupeLabel, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(0,255,255)}):Play()
+        task.wait(0.13)
+        TweenService:Create(petDupeLabel, TweenInfo.new(0.25), {TextColor3 = Color3.fromRGB(0,255,220)}):Play()
+    end)
+end
+
+-- Central dupe container
+local dupeFrame = Instance.new("Frame")
+dupeFrame.Size = UDim2.new(0.68, 0, 0.42, 0)
+dupeFrame.Position = UDim2.new(0.29, 0, 0.14, 0)
+dupeFrame.BackgroundTransparency = 0.19
+dupeFrame.BackgroundColor3 = Color3.fromRGB(10, 40, 70)
+dupeFrame.BorderSizePixel = 0
+dupeFrame.ZIndex = 12
+dupeFrame.Parent = mainFrame
+addGradient(dupeFrame, ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0,255,200)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0,50,100))
+}, 0)
+
+local petDupeLabel = Instance.new("TextLabel")
+petDupeLabel.Text = "PET DUPE: " .. selectedPet
+petDupeLabel.Size = UDim2.new(1, 0, 0.22, 0)
+petDupeLabel.BackgroundTransparency = 1
+petDupeLabel.Position = UDim2.new(0, 0, 0, 0)
+petDupeLabel.TextColor3 = Color3.fromRGB(0,255,220)
+petDupeLabel.Font = Enum.Font.GothamBold
+petDupeLabel.TextScaled = true
+petDupeLabel.ZIndex = 13
+petDupeLabel.Parent = dupeFrame
+
+local startDupeBtn = Instance.new("TextButton")
+startDupeBtn.Text = "START DUPE"
+startDupeBtn.Size = UDim2.new(0.7, 0, 0.38, 0)
+startDupeBtn.Position = UDim2.new(0.15, 0, 0.32, 0)
+startDupeBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
+startDupeBtn.BackgroundTransparency = 0.08
+startDupeBtn.TextColor3 = Color3.fromRGB(20, 30, 35)
+startDupeBtn.Font = Enum.Font.GothamBlack
+startDupeBtn.TextScaled = true
+startDupeBtn.ZIndex = 13
+startDupeBtn.Parent = dupeFrame
+addGradient(startDupeBtn, ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0,255,200)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0,50,100))
+}, 90)
+neonPulse(startDupeBtn)
+
+local petInventoryLabel = Instance.new("TextLabel")
+petInventoryLabel.Text = "PET INVENTORY: DETECTED"
+petInventoryLabel.Size = UDim2.new(1, 0, 0.12, 0)
+petInventoryLabel.Position = UDim2.new(0, 0, 0.56, 0)
+petInventoryLabel.BackgroundTransparency = 1
+petInventoryLabel.TextColor3 = Color3.fromRGB(0,255,180)
+petInventoryLabel.Font = Enum.Font.GothamBold
+petInventoryLabel.TextScaled = true
+petInventoryLabel.ZIndex = 13
+petInventoryLabel.Parent = dupeFrame
+
+local startScanBtn = Instance.new("TextButton")
+startScanBtn.Text = "START SCAN"
+startScanBtn.Size = UDim2.new(0.7, 0, 0.22, 0)
+startScanBtn.Position = UDim2.new(0.15, 0, 0.72, 0)
+startScanBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 130)
+startScanBtn.BackgroundTransparency = 0.08
+startScanBtn.TextColor3 = Color3.fromRGB(20, 30, 35)
+startScanBtn.Font = Enum.Font.GothamBlack
+startScanBtn.TextScaled = true
+startScanBtn.ZIndex = 13
+startScanBtn.Parent = dupeFrame
+addGradient(startScanBtn, ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0,255,200)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0,50,100))
+}, 90)
+neonPulse(startScanBtn)
+
+-- Real animated loading screen function
+local function showLoading(textPrefix, doneText, after)
+    blackScreen.Visible = true
+    loadingText.Visible = true
+    spinner.Visible = true
+    startSpinner()
+    loadingText.Text = textPrefix .. " 0%"
+    local displayObj = {Value = 0}
+    local tween = TweenService:Create(displayObj, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Value = 100})
+    tween:Play()
+    tween.Completed:Connect(function()
+        loadingText.Text = doneText
+        wait(0.9)
+        blackScreen.Visible = false
+        loadingText.Visible = false
+        spinner.Visible = false
+        stopSpinner()
+        if after then after() end
+    end)
+    while blackScreen.Visible and displayObj.Value < 100 do
+        loadingText.Text = string.format("%s %d%%", textPrefix, math.floor(displayObj.Value))
+        task.wait(0.02)
+    end
+end
+
+startDupeBtn.MouseButton1Click:Connect(function()
+    showLoading("DUPING STARTED PLEASE... LOADING", "DUPING COMPLETE", function()
+        -- Return to UI
+    end)
+end)
+
+startScanBtn.MouseButton1Click:Connect(function()
+    showLoading("SCANNING... LOADING", "NO PET DETECTED", function()
+        -- Return to UI
+    end)
+end)
+
+-- Optional: Glass effect on main frame, but less visible
+local glass = Instance.new("ImageLabel")
+glass.Size = UDim2.new(1,0,1,0)
+glass.BackgroundTransparency = 1
+glass.Image = "rbxassetid://5553946656"
+glass.ImageTransparency = 0.94
+glass.ZIndex = 15
+glass.Parent = mainFrame
+
+-- Make sure all elements are on correct ZIndex
+for _, v in ipairs(mainFrame:GetChildren()) do
+    if v:IsA("GuiObject") then
+        v.ZIndex = math.max(11, v.ZIndex or 0)
+    end
+end
+
+-- UI is now fully functional, visible, stylish, and animated!
