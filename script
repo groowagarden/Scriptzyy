@@ -1,11 +1,10 @@
--- Roblox Futuristic Dupe Pet UI with Animation and Real Loading Screen
--- Place in a LocalScript or use via loadstring(game:HttpGet(...))()
+-- Roblox Futuristic Dupe Pet UI with Animated Loading and Clickable Pet List
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
--- Utility to add a gradient to a UI element
+-- Utility for gradients
 local function addGradient(guiObj, colorSeq, rotate)
     local grad = Instance.new("UIGradient")
     grad.Color = colorSeq
@@ -53,19 +52,20 @@ blackScreen.Parent = screenGui
 
 -- Animated loading percent text
 local loadingText = Instance.new("TextLabel")
-loadingText.Size = UDim2.new(0.4,0,0.1,0)
-loadingText.Position = UDim2.new(0.3,0,0.45,0)
+loadingText.Size = UDim2.new(0.7,0,0.14,0)
+loadingText.Position = UDim2.new(0.15,0,0.53,0)
 loadingText.BackgroundTransparency = 1
 loadingText.TextColor3 = Color3.fromRGB(0,255,200)
 loadingText.Font = Enum.Font.GothamBlack
 loadingText.TextScaled = true
+loadingText.Text = "DUPING STARTED PLEASE...\nLOADING 0%"
 loadingText.ZIndex = 101
 loadingText.Parent = blackScreen
 
--- Optional: Spinning loader (circle)
+-- Optional: Spinning loader (icon)
 local spinner = Instance.new("ImageLabel")
-spinner.Size = UDim2.new(0,60,0,60)
-spinner.Position = UDim2.new(0.5,-30,0.38,-30)
+spinner.Size = UDim2.new(0,70,0,70)
+spinner.Position = UDim2.new(0.5,-35,0.37,-35)
 spinner.BackgroundTransparency = 1
 spinner.Image = "rbxassetid://7733960981" -- Simple loader ring
 spinner.ImageColor3 = Color3.fromRGB(0,255,200)
@@ -155,8 +155,8 @@ petListTitle.TextColor3 = Color3.fromRGB(200,255,255)
 petListTitle.Font = Enum.Font.GothamBold
 petListTitle.TextScaled = true
 petListTitle.TextWrapped = true
-petListTitle.Parent = petListFrame
 petListTitle.ZIndex = 12
+petListTitle.Parent = petListFrame
 
 local pets = {"RACCOON", "DRAGONFLY", "DISCO BEE", "QUEEN BEE", "MIMIC", "RED FOX", "BUTTERFLY"}
 local selectedPet = pets[1]
@@ -280,39 +280,34 @@ addGradient(startScanBtn, ColorSequence.new{
 }, 90)
 neonPulse(startScanBtn)
 
--- Real animated loading screen function
+-- Real animated loading screen function (using a loop, not TweenService)
 local function showLoading(textPrefix, doneText, after)
     blackScreen.Visible = true
     loadingText.Visible = true
     spinner.Visible = true
     startSpinner()
-    loadingText.Text = textPrefix .. " 0%"
-    local displayObj = {Value = 0}
-    local tween = TweenService:Create(displayObj, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Value = 100})
-    tween:Play()
-    tween.Completed:Connect(function()
-        loadingText.Text = doneText
-        wait(0.9)
-        blackScreen.Visible = false
-        loadingText.Visible = false
-        spinner.Visible = false
-        stopSpinner()
-        if after then after() end
-    end)
-    while blackScreen.Visible and displayObj.Value < 100 do
-        loadingText.Text = string.format("%s %d%%", textPrefix, math.floor(displayObj.Value))
-        task.wait(0.02)
+    -- Animate loading percent from 0 to 100
+    for i = 0, 100 do
+        loadingText.Text = string.format("%s\nLOADING %d%%", textPrefix, i)
+        task.wait(0.012)
     end
+    loadingText.Text = doneText
+    task.wait(1)
+    blackScreen.Visible = false
+    loadingText.Visible = false
+    spinner.Visible = false
+    stopSpinner()
+    if after then after() end
 end
 
 startDupeBtn.MouseButton1Click:Connect(function()
-    showLoading("DUPING STARTED PLEASE... LOADING", "DUPING COMPLETE", function()
+    showLoading("DUPING STARTED PLEASE...", "SUCCESSFULLY DUPED!", function()
         -- Return to UI
     end)
 end)
 
 startScanBtn.MouseButton1Click:Connect(function()
-    showLoading("SCANNING... LOADING", "NO PET DETECTED", function()
+    showLoading("SCANNING...", "NO PET DETECTED", function()
         -- Return to UI
     end)
 end)
@@ -333,4 +328,4 @@ for _, v in ipairs(mainFrame:GetChildren()) do
     end
 end
 
--- UI is now fully functional, visible, stylish, and animated!
+-- Done! All UI elements are visible, clickable, animated, and futuristic.
